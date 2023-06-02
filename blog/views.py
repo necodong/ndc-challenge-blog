@@ -1,11 +1,17 @@
+from pathlib import Path
+import urllib
 import openai
+import logging
 from django.conf import settings
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
+
 from .forms import PostForm, PromptForm
 from .models import Post
 
 openai.api_key = settings.OPENAI_API_KEY
+logger = logging.getLogger(__name__)
+image_directory = Path(settings.BASE_DIR, 'blog', 'static', 'images')
 
 # Create your views here.
 def post_list(request):
@@ -19,6 +25,7 @@ def post_detail(request, pk):
     # pk = 6
     # 404 Not Found 찾지 못함
     post = get_object_or_404(Post, pk=pk)
+    post.image_url = Path('images', f'{post.image_prompt}.png')
     return render(request, 'blog/post_detail.html', { 'post': post })
 
 def post_new(request):
@@ -59,20 +66,26 @@ def generate_post(request):
     if request.method == "POST":
         form = PromptForm(request.POST)
         if form.is_valid():
-            post = Post()
+            post = form.save(commit=False)
+            post.published_date = timezone.now()
             post.author = request.user
             completion = openai.Completion.create(
                 engine='text-davinci-003',
-                prompt=form.cleaned_data['prompt'],
+                prompt=post.prompt,
                 max_tokens=1024,
                 n=1,
                 stop=None,
                 temperature=0.5,
             )
             post.text = completion.choices[0].text
-            post.prompt = form.cleaned_data['prompt']
-            post.title = form.cleaned_data['prompt']
-            post.publish()
+            post.save()
+
+            image_resp = openai.Image.create(prompt=post.image_prompt, n=4, size="512x512")
+            image_url = image_resp['data'][0]['url']
+            Path.mkdir(image_directory, exist_ok=True)
+            image_path = Path(image_directory, f'{post.image_prompt}.png')
+            urllib.request.urlretrieve(image_url, image_path)
+
             return redirect('post_detail', pk=post.pk)
     else:
         form = PromptForm()

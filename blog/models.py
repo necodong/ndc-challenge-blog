@@ -26,6 +26,8 @@ class Post(models.Model):
     # 게시글이 퍼블리시된
     published_date = models.DateTimeField(
             blank=True, null=True)
+    prompt = models.CharField(max_length=200, default="Not created by AI")
+    image_prompt = models.CharField(max_length=200, default="Not created by AI")
 
     # 메서드
     def publish(self):
