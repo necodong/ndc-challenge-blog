@@ -59,19 +59,20 @@ def generate_post(request):
     if request.method == "POST":
         form = PromptForm(request.POST)
         if form.is_valid():
+            prompt = form.cleaned_data['prompt']
             post = Post()
             post.author = request.user
             completion = openai.Completion.create(
                 engine='text-davinci-003',
-                prompt=form.cleaned_data['prompt'],
+                prompt=prompt,
                 max_tokens=1024,
                 n=1,
                 stop=None,
                 temperature=0.5,
             )
             post.text = completion.choices[0].text
-            post.prompt = form.cleaned_data['prompt']
-            post.title = form.cleaned_data['prompt']
+            post.prompt = prompt
+            post.title = prompt
             post.publish()
             return redirect('post_detail', pk=post.pk)
     else:
