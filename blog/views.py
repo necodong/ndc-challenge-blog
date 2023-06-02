@@ -19,6 +19,7 @@ def post_detail(request, pk):
     # pk = 6
     # 404 Not Found 찾지 못함
     post = get_object_or_404(Post, pk=pk)
+    post.image_url = f'images/{post.title}.png'
     return render(request, 'blog/post_detail.html', { 'post': post })
 
 def post_new(request):
