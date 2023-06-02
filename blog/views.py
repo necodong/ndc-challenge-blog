@@ -2,7 +2,7 @@ import openai
 from django.conf import settings
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
-from .forms import PostForm
+from .forms import PostForm, PromptForm
 from .models import Post
 
 openai.api_key = settings.OPENAI_API_KEY
@@ -54,3 +54,27 @@ def post_edit(request, pk):
         # instance는 게시글 내용을 폼에 미리 넣어서 사용자들이 편집을 할 수 있게
         form = PostForm(instance=post)
     return render(request, 'blog/post_edit.html', {'form': form})
+
+def generate_post(request):
+    if request.method == "POST":
+        form = PromptForm(request.POST)
+        if form.is_valid():
+            post = Post()
+            post.author = request.user
+            completion = openai.Completion.create(
+                engine='text-davinci-003',
+                prompt=form.cleaned_data['prompt'],
+                max_tokens=1024,
+                n=1,
+                stop=None,
+                temperature=0.5,
+            )
+            post.text = completion.choices[0].text
+            post.prompt = form.cleaned_data['prompt']
+            post.title = form.cleaned_data['prompt']
+            post.publish()
+            return redirect('post_detail', pk=post.pk)
+    else:
+        form = PromptForm()
+        
+    return render(request, 'blog/generate_post.html', {'form': form})
