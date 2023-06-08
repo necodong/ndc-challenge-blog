@@ -80,7 +80,7 @@ def generate_post(request):
             post.text = completion.choices[0].text
             post.save()
 
-            image_resp = openai.Image.create(prompt=post.image_prompt, n=4, size="512x512")
+            image_resp = openai.Image.create(prompt=post.image_prompt, size="512x512")
             image_url = image_resp['data'][0]['url']
             Path.mkdir(image_directory, exist_ok=True)
             image_path = Path(image_directory, f'{post.image_prompt}.png')
