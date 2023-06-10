@@ -13,8 +13,10 @@
   <body>
     <div class="page-header">
         {% if user.is_authenticated %}
-        <a href="{% url 'post_new' %}" class="top-menu"><i class="bi bi-plus-square"></i></a>
-        <a href="{% url 'generate_post' %}" class="top-menu"><i class="bi bi-robot"></i></a>
+            <a href="{% url 'post_new' %}" class="top-menu"><i class="bi bi-plus-square"></i></a>
+            <a href="{% url 'generate_post' %}" class="top-menu"><i class="bi bi-robot"></i></a>
+        {% else %}
+            <a href="/admin" class="top-menu"><i class="bi bi-door-open"></i></a>
         {% endif %}
         <h1><a href="/">NECODONG Blog</a></h1>
     </div>
