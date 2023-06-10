@@ -13,10 +13,7 @@
                 "runserver"
             ],
             "django": true,
-            "justMyCode": true,
-            "env": {
-                "REQUESTS_CA_BUNDLE": "C:\\NEXON.crt"
-            }
+            "justMyCode": true
         }
     ]
 }
