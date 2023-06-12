@@ -1,11 +1,16 @@
+import logging
+from pathlib import Path
+import urllib
 import openai
 from django.conf import settings
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
-from .forms import PostForm
+from .forms import PostForm, PromptForm
 from .models import Post
 
+logger = logging.getLogger(__name__)
 openai.api_key = settings.OPENAI_API_KEY
+image_directory = Path(settings.BASE_DIR, 'blog', 'static', 'images')
 
 # Create your views here.
 def post_list(request):
@@ -19,6 +24,7 @@ def post_detail(request, pk):
     # pk = 6
     # 404 Not Found 찾지 못함
     post = get_object_or_404(Post, pk=pk)
+    post.image_url = Path('images', f'{post.image_prompt}_{post.pk}.png')
     return render(request, 'blog/post_detail.html', { 'post': post })
 
 def post_new(request):
@@ -54,3 +60,38 @@ def post_edit(request, pk):
         # instance는 게시글 내용을 폼에 미리 넣어서 사용자들이 편집을 할 수 있게
         form = PostForm(instance=post)
     return render(request, 'blog/post_edit.html', {'form': form})
+
+def generate_post(request):
+    if request.method == "POST":
+        form = PromptForm(request.POST)
+        if form.is_valid():
+            post = form.save(commit=False)
+            post.published_date = timezone.now()
+            post.author = request.user
+            # ChatGPT로 블로그 글 생성
+            completion = openai.Completion.create(
+                engine='text-davinci-003',
+                prompt=post.prompt,
+                max_tokens=1024,
+                n=1,
+                stop=None,
+                temperature=0.5,
+            )
+            post.text = completion.choices[0].text
+            logger.debug(f"Geneated text: {post.text}")
+            post.save()
+            # DALL-E로 이미지 생성
+            image_resp = openai.Image.create(prompt=post.image_prompt, n=1, size="512x512")
+            image_url = image_resp['data'][0]['url']
+            logger.debug(f"Geneated Image Url: {image_url}")
+            # 폴더가 없으면 만들기
+            Path.mkdir(image_directory, exist_ok=True)
+            image_path = Path(image_directory, f'{post.image_prompt}_{post.pk}.png')
+            # 이미지 다운로드
+            urllib.request.urlretrieve(image_url, image_path)
+
+            return redirect('post_detail', pk=post.pk)
+    else:
+        form = PromptForm()
+        
+    return render(request, 'blog/generate_post.html', {'form': form})
