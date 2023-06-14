@@ -80,28 +80,39 @@ def generate_post(request):
             post = form.save(commit=False)
             post.published_date = timezone.now()
             post.author = request.user
-            completion = openai.Completion.create(
-                engine="text-davinci-003",
-                prompt=post.prompt,
-                max_tokens=1024,
-                n=1,
-                stop=None,
-                temperature=0.5,
-            )
-            post.text = completion.choices[0].text
-            image_resp = openai.Image.create(prompt=post.image_prompt, size="512x512")
-            image_url = image_resp["data"][0]["url"]
-            image_temp = urllib.request.urlretrieve(image_url)[0]
 
-            # Save image to the post.thumbnail field
-            post.thumbnail.save(
-                f"{post.image_prompt}.png", File(open(image_temp, "rb")), save=True
-            )
+            try:
+                completion = openai.Completion.create(
+                    engine='text-davinci-003',
+                    prompt=post.prompt,
+                    max_tokens=1024,
+                    n=1,
+                    stop=None,
+                    temperature=0.5,
+                )
+                post.text = completion.choices[0].text
 
-            post.save()
+                image_resp = openai.Image.create(prompt=post.image_prompt, size="512x512")
+                image_url = image_resp['data'][0]['url']
+                image_temp = urllib.request.urlretrieve(image_url)[0]
 
-            return redirect("post_detail", pk=post.pk)
+                # Save image to the post.thumbnail field
+                post.thumbnail.save(f'{post.image_prompt}.png', File(open(image_temp, 'rb')), save=True)
+
+                post.save()
+
+                return redirect('post_detail', pk=post.pk)
+
+            except openai.InvalidRequestError as e:
+                logger.error("InvalidRequestError occurred: %s", str(e))
+                form.add_error('image_prompt', str(e))
+                form.add_error('prompt', str(e))
+
     else:
         form = PromptForm()
 
-    return render(request, "blog/generate_post.html", {"form": form})
+    context = {
+        'form': form
+    }
+
+    return render(request, 'blog/generate_post.html', context)
