@@ -28,6 +28,7 @@ class Post(models.Model):
             blank=True, null=True)
     prompt = models.CharField(max_length=200, default="Not created by AI")
     image_prompt = models.CharField(max_length=200, default="Not created by AI")
+    thumbnail = models.ImageField(null=True, upload_to='thumbnails')
 
     # 메서드
     def publish(self):

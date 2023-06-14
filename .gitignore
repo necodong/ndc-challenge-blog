@@ -8,3 +8,4 @@ db.sqlite3
 .env
 .vscode/
 blog/static/images/
+uploads/

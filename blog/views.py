@@ -26,12 +26,15 @@ def post_detail(request, pk):
     # 404 Not Found 찾지 못함
     post = get_object_or_404(Post, pk=pk)
     post.image_url = Path('images', f'{post.image_prompt}.png')
-    return render(request, 'blog/post_detail.html', { 'post': post })
+
+    media_base = f'{request.scheme}://{request.get_host()}' if settings.DEBUG else '' # TODO: CDN URL 세팅
+    
+    return render(request, 'blog/post_detail.html', { 'post': post, 'media_base': media_base })
 
 def post_new(request):
     if request.method == 'POST':
         # DB에 저장하는 동작
-        form = PostForm(request.POST)
+        form = PostForm(request.POST, request.FILES)
 
         if form.is_valid():
             # commit = False

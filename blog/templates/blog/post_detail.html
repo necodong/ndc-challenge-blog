@@ -15,6 +15,6 @@
         <a class="btn btn-default" href="{% url 'post_edit' pk=post.pk %}"><i class="bi bi-pencil"></i></a>
         {% endif %}
     </h1>
-    <p><img alt="{{ post.title }}" src="{% static post.image_url %}"><br>{{ post.text|linebreaksbr }}</p>
+    <p><img alt="{{ post.title }}" src="{{ media_base }}/uploads/{{ post.thumbnail }}"><br>{{ post.text|linebreaksbr }}</p>
 </div>
 {% endblock %}
